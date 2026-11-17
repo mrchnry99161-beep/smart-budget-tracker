@@ -129,7 +129,7 @@
   </div>
 </div>
 
-
+<script>
   let allowance = parseFloat(localStorage.getItem('sbt_allowance')) || 0;
   let daysLeft = parseInt(localStorage.getItem('sbt_days')) || 1;
   let expenses = JSON.parse(localStorage.getItem('sbt_expenses')) || [];
@@ -164,7 +164,7 @@
     const amount = parseFloat(document.getElementById('expenseAmount').value);
 
     if (name !== '' && !isNaN(amount) && amount > 0) {
-      expenses.push({ id: Date.now(), name, category, amount });
+      expenses.push({ id: Date.now(), name: name, category: category, amount: amount });
       document.getElementById('expenseName').value = '';
       document.getElementById('expenseAmount').value = '';
       saveToStorage();
@@ -173,7 +173,7 @@
   }
 
   function deleteExpense(id) {
-    expenses = expenses.filter(item => item.id !== id);
+    expenses = expenses.filter(function(item) { return item.id !== id; });
     saveToStorage();
     updateDashboard();
   }
@@ -194,8 +194,8 @@
       return;
     }
     let csv = 'Item Name,Category,Amount (PHP)\n';
-    expenses.forEach(e => {
-      csv += `"${e.name.replace(/"/g, '""')}",${e.category},${e.amount.toFixed(2)}\n`;
+    expenses.forEach(function(e) {
+      csv += '"' + e.name.replace(/"/g, '""') + '",' + e.category + ',' + e.amount.toFixed(2) + '\n';
     });
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -208,7 +208,7 @@
 
   function calculateMedian(arr) {
     if (arr.length === 0) return 0;
-    const sorted = [...arr].sort((a, b) => a - b);
+    const sorted = arr.slice().sort(function(a, b) { return a - b; });
     const mid = Math.floor(sorted.length / 2);
     return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
   }
@@ -240,7 +240,7 @@
     }
 
     let startAngle = -Math.PI / 2;
-    Object.keys(categoryTotals).forEach(cat => {
+    Object.keys(categoryTotals).forEach(function(cat) {
       const val = categoryTotals[cat];
       const pct = ((val / totalSpent) * 100).toFixed(0);
       if (val > 0) {
@@ -256,7 +256,7 @@
 
       const li = document.createElement('li');
       li.className = 'legend-item';
-      li.innerHTML = `<span class="legend-dot" style="background:${categoryColors[cat]}"></span><strong>${cat}:</strong>&nbsp;₱${val.toFixed(0)} (${pct}%)`;
+      li.innerHTML = '<span class="legend-dot" style="background:' + categoryColors[cat] + '"></span><strong>' + cat + ':</strong>&nbsp;₱' + val.toFixed(0) + ' (' + pct + '%)';
       legend.appendChild(li);
     });
 
@@ -267,20 +267,20 @@
   }
 
   function updateDashboard() {
-    const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
+    const totalSpent = expenses.reduce(function(sum, item) { return sum + item.amount; }, 0);
     const remaining = allowance - totalSpent;
     const dailyLimit = remaining > 0 ? (remaining / daysLeft) : 0;
     const percent = allowance > 0 ? ((totalSpent / allowance) * 100).toFixed(1) : 0;
     const average = expenses.length > 0 ? (totalSpent / expenses.length) : 0;
-    const median = calculateMedian(expenses.map(e => e.amount));
-    const highest = expenses.length > 0 ? Math.max(...expenses.map(e => e.amount)) : 0;
+    const median = calculateMedian(expenses.map(function(e) { return e.amount; }));
+    const highest = expenses.length > 0 ? Math.max.apply(null, expenses.map(function(e) { return e.amount; })) : 0;
 
     const catTotals = { Food: 0, Transport: 0, School: 0, Other: 0 };
     const catCounts = {};
     let topCategory = 'None';
     let maxCount = 0;
 
-    expenses.forEach(e => {
+    expenses.forEach(function(e) {
       catTotals[e.category] = (catTotals[e.category] || 0) + e.amount;
       catCounts[e.category] = (catCounts[e.category] || 0) + 1;
       if (catCounts[e.category] > maxCount) {
@@ -289,29 +289,26 @@
       }
     });
 
-    document.getElementById('totalAllowance').innerText = `₱${allowance.toFixed(2)}`;
-    document.getElementById('totalSpent').innerText = `₱${totalSpent.toFixed(2)}`;
-    document.getElementById('remainingBalance').innerText = `₱${remaining.toFixed(2)}`;
-    document.getElementById('dailyBudgetText').innerText = `Safe Daily Limit (${daysLeft}d): ₱${dailyLimit.toFixed(2)} / day`;
-    document.getElementById('percentUsed').innerText = `${percent}%`;
-    document.getElementById('avgExpense').innerText = `₱${average.toFixed(2)}`;
-    document.getElementById('medianExpense').innerText = `₱${median.toFixed(2)}`;
+    document.getElementById('totalAllowance').innerText = '₱' + allowance.toFixed(2);
+    document.getElementById('totalSpent').innerText = '₱' + totalSpent.toFixed(2);
+    document.getElementById('remainingBalance').innerText = '₱' + remaining.toFixed(2);
+    document.getElementById('dailyBudgetText').innerText = 'Safe Daily Limit (' + daysLeft + 'd): ₱' + dailyLimit.toFixed(2) + ' / day';
+    document.getElementById('percentUsed').innerText = percent + '%';
+    document.getElementById('avgExpense').innerText = '₱' + average.toFixed(2);
+    document.getElementById('medianExpense').innerText = '₱' + median.toFixed(2);
     document.getElementById('modeCategory').innerText = topCategory;
-    document.getElementById('highestExpense').innerText = `₱${highest.toFixed(2)}`;
+    document.getElementById('highestExpense').innerText = '₱' + highest.toFixed(2);
 
     const bar = document.getElementById('progressBar');
-    bar.style.width = `${Math.min(percent, 100)}%`;
+    bar.style.width = Math.min(percent, 100) + '%';
     bar.style.backgroundColor = percent > 100 ? '#ef4444' : '#2563eb';
 
     const list = document.getElementById('historyList');
     list.innerHTML = '';
-    expenses.forEach(item => {
+    expenses.forEach(function(item) {
       const li = document.createElement('li');
       li.className = 'history-item';
-      li.innerHTML = `
-        <div><span class="badge">${item.category}</span>${item.name}</div>
-        <div><strong>₱${item.amount.toFixed(2)}</strong><button class="delete-btn" onclick="deleteExpense(${item.id})">X</button></div>
-      `;
+      li.innerHTML = '<div><span class="badge">' + item.category + '</span>' + item.name + '</div><div><strong>₱' + item.amount.toFixed(2) + '</strong><button class="delete-btn" onclick="deleteExpense(' + item.id + ')">X</button></div>';
       list.appendChild(li);
     });
 
