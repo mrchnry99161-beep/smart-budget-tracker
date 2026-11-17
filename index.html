@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Smart Student Budget Tracker</title>
-  <script src="https://jsdelivr.net"></script>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { background-color: #f0f4f8; color: #1e293b; margin: 0; padding: 20px; display: flex; justify-content: center; }
@@ -19,7 +18,7 @@
     .section-title { font-size: 0.9rem; font-weight: 700; color: #475569; margin: 18px 0 10px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; }
     .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
     input, select, button { padding: 10px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; }
-    input, select { flex: 1; }
+    input, select { flex: 1; min-width: 0; }
     button { background: #2563eb; color: white; border: none; font-weight: 600; cursor: pointer; transition: background 0.2s; }
     button:hover { background: #1d4ed8; }
     .btn-green { background: #10b981; }
@@ -34,7 +33,10 @@
     .stat-value { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-top: 4px; }
     .progress-bar-bg { background: #e2e8f0; height: 10px; border-radius: 999px; overflow: hidden; margin: 8px 0; }
     .progress-bar-fill { background: #2563eb; height: 100%; width: 0%; transition: width 0.3s; }
-    .chart-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-top: 10px; height: 220px; display: flex; justify-content: center; }
+    .chart-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-top: 10px; display: flex; align-items: center; justify-content: space-around; gap: 12px; }
+    .legend-list { list-style: none; padding: 0; margin: 0; font-size: 0.85rem; }
+    .legend-item { display: flex; align-items: center; margin-bottom: 6px; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; display: inline-block; }
     .history-list { list-style: none; padding: 0; margin: 0; max-height: 220px; overflow-y: auto; }
     .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
     .badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: #e0e7ff; color: #1d4ed8; margin-right: 6px; font-weight: 600; }
@@ -79,7 +81,8 @@
 
     <div class="section-title">3. Expense Breakdown Chart</div>
     <div class="chart-box">
-      <canvas id="expenseChart"></canvas>
+      <canvas id="expenseChart" width="150" height="150"></canvas>
+      <ul class="legend-list" id="chartLegend"></ul>
     </div>
 
     <div class="section-title">4. Math & Statistics Summary</div>
@@ -130,7 +133,13 @@
   let allowance = parseFloat(localStorage.getItem('sbt_allowance')) || 0;
   let daysLeft = parseInt(localStorage.getItem('sbt_days')) || 1;
   let expenses = JSON.parse(localStorage.getItem('sbt_expenses')) || [];
-  let myChart = null;
+
+  const categoryColors = {
+    Food: '#2563eb',
+    Transport: '#10b981',
+    School: '#f59e0b',
+    Other: '#8b5cf6'
+  };
 
   function saveToStorage() {
     localStorage.setItem('sbt_allowance', allowance);
@@ -204,35 +213,54 @@
     return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
   }
 
-  function updateChart(categoryTotals) {
-    const ctx = document.getElementById('expenseChart').getContext('2d');
-    const labels = Object.keys(categoryTotals);
-    const data = Object.values(categoryTotals);
-    const hasData = data.some(v => v > 0);
+  function drawDonutChart(categoryTotals, totalSpent) {
+    const canvas = document.getElementById('expenseChart');
+    const ctx = canvas.getContext('2d');
+    const legend = document.getElementById('chartLegend');
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const radius = 62;
 
-    if (myChart) myChart.destroy();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    legend.innerHTML = '';
 
-    myChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: hasData ? labels : ['No Expenses Yet'],
-        datasets: [{
-          data: hasData ? data :,
-          backgroundColor: hasData ? ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6'] : ['#e2e8f0'],
-          borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'right' }
-        }
-      }
-    });
-  }
-
-  function updateDashboard() {
+    if (totalSpent <= 0) {
+ctx.beginPath();
+ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+ctx.fillStyle = '#e2e8f0';
+ctx.fill();
+ctx.beginPath();
+ctx.arc(cx, cy, radius * 0.55, 0, Math.PI * 2);
+ctx.fillStyle = '#f8fafc';
+ctx.fill();
+legend.innerHTML = 'No expenses yet';
+return;
+}
+let startAngle = -Math.PI / 2;
+Object.keys(categoryTotals).forEach(cat => {
+const val = categoryTotals[cat];
+const pct = ((val / totalSpent) * 100).toFixed(0);
+if (val > 0) {
+const sliceAngle = (val / totalSpent) * Math.PI * 2;
+ctx.beginPath();
+ctx.moveTo(cx, cy);
+ctx.arc(cx, cy, radius, startAngle, startAngle + sliceAngle);
+ctx.closePath();
+ctx.fillStyle = categoryColors[cat];
+ctx.fill();
+startAngle += sliceAngle;
+}
+const li = document.createElement('li');
+li.className = 'legend-item';
+li.innerHTML = <span class="legend-dot" style="background:${categoryColors[cat]}"></span><strong>${cat}:</strong>&nbsp;₱${val.toFixed(0)} (${pct}%);
+legend.appendChild(li);
+});
+ctx.beginPath();
+ctx.arc(cx, cy, radius * 0.55, 0, Math.PI * 2);
+ctx.fillStyle = '#f8fafc';
+ctx.fill();
+}
+function updateDashboard() {
 const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
 const remaining = allowance - totalSpent;
 const dailyLimit = remaining > 0 ? (remaining / daysLeft) : 0;
@@ -272,10 +300,10 @@ li.className = 'history-item';
 li.innerHTML = <div><span class="badge">${item.category}</span>${item.name}</div> <div><strong>₱${item.amount.toFixed(2)}</strong><button class="delete-btn" onclick="deleteExpense(${item.id})">X</button></div>;
 list.appendChild(li);
 });
-updateChart(catTotals);
+drawDonutChart(catTotals, totalSpent);
 }
- updateDashboard();
-</script>
+updateDashboard();
+  </script>
 
 </body>
 </html>
