@@ -221,102 +221,88 @@
     const cy = canvas.height / 2;
     const radius = 62;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    legend.innerHTML = '';
-
-    if (totalSpent <= 0) {
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.fillStyle = '#e2e8f0';
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius * 0.55, 0, Math.PI * 2);
-      ctx.fillStyle = '#f8fafc';
-      ctx.fill();
-
-      legend.innerHTML = '<li class="legend-item" style="color:#64748b;">No expenses yet</li>';
-      return;
-    }
-
-    let startAngle = -Math.PI / 2;
-    Object.keys(categoryTotals).forEach(function(cat) {
-      const val = categoryTotals[cat];
-      const pct = ((val / totalSpent) * 100).toFixed(0);
-      if (val > 0) {
-        const sliceAngle = (val / totalSpent) * Math.PI * 2;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, radius, startAngle, startAngle + sliceAngle);
-        ctx.closePath();
-        ctx.fillStyle = categoryColors[cat];
-        ctx.fill();
-        startAngle += sliceAngle;
-      }
-
-      const li = document.createElement('li');
-      li.className = 'legend-item';
-      li.innerHTML = '<span class="legend-dot" style="background:' + categoryColors[cat] + '"></span><strong>' + cat + ':</strong>&nbsp;₱' + val.toFixed(0) + ' (' + pct + '%)';
-      legend.appendChild(li);
-    });
-
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius * 0.55, 0, Math.PI * 2);
-    ctx.fillStyle = '#f8fafc';
-    ctx.fill();
-  }
-
-  function updateDashboard() {
-    const totalSpent = expenses.reduce(function(sum, item) { return sum + item.amount; }, 0);
-    const remaining = allowance - totalSpent;
-    const dailyLimit = remaining > 0 ? (remaining / daysLeft) : 0;
-    const percent = allowance > 0 ? ((totalSpent / allowance) * 100).toFixed(1) : 0;
-    const average = expenses.length > 0 ? (totalSpent / expenses.length) : 0;
-    const median = calculateMedian(expenses.map(function(e) { return e.amount; }));
-    const highest = expenses.length > 0 ? Math.max.apply(null, expenses.map(function(e) { return e.amount; })) : 0;
-
-    const catTotals = { Food: 0, Transport: 0, School: 0, Other: 0 };
-    const catCounts = {};
-    let topCategory = 'None';
-    let maxCount = 0;
-
-    expenses.forEach(function(e) {
-      catTotals[e.category] = (catTotals[e.category] || 0) + e.amount;
-      catCounts[e.category] = (catCounts[e.category] || 0) + 1;
-      if (catCounts[e.category] > maxCount) {
-        maxCount = catCounts[e.category];
-        topCategory = e.category;
-      }
-    });
-
-    document.getElementById('totalAllowance').innerText = '₱' + allowance.toFixed(2);
-    document.getElementById('totalSpent').innerText = '₱' + totalSpent.toFixed(2);
-    document.getElementById('remainingBalance').innerText = '₱' + remaining.toFixed(2);
-    document.getElementById('dailyBudgetText').innerText = 'Safe Daily Limit (' + daysLeft + 'd): ₱' + dailyLimit.toFixed(2) + ' / day';
-    document.getElementById('percentUsed').innerText = percent + '%';
-    document.getElementById('avgExpense').innerText = '₱' + average.toFixed(2);
-    document.getElementById('medianExpense').innerText = '₱' + median.toFixed(2);
-    document.getElementById('modeCategory').innerText = topCategory;
-    document.getElementById('highestExpense').innerText = '₱' + highest.toFixed(2);
-
-    const bar = document.getElementById('progressBar');
-    bar.style.width = Math.min(percent, 100) + '%';
-    bar.style.backgroundColor = percent > 100 ? '#ef4444' : '#2563eb';
-
-    const list = document.getElementById('historyList');
-    list.innerHTML = '';
-    expenses.forEach(function(item) {
-      const li = document.createElement('li');
-      li.className = 'history-item';
-      li.innerHTML = '<div><span class="badge">' + item.category + '</span>' + item.name + '</div><div><strong>₱' + item.amount.toFixed(2) + '</strong><button class="delete-btn" onclick="deleteExpense(' + item.id + ')">X</button></div>';
-      list.appendChild(li);
-    });
-
-    drawDonutChart(catTotals, totalSpent);
-  }
-
-  updateDashboard();
-</script>
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+legend.innerHTML = '';
+if (totalSpent <= 0) {
+ctx.beginPath();
+ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+ctx.fillStyle = '#e2e8f0';
+ctx.fill();
+ctx.beginPath();
+ctx.arc(cx, cy, radius * 0.55, 0, Math.PI * 2);
+ctx.fillStyle = '#f8fafc';
+ctx.fill();
+legend.innerHTML = 'No expenses yet';
+return;
+}
+let startAngle = -Math.PI / 2;
+Object.keys(categoryTotals).forEach(function(cat) {
+const val = categoryTotals[cat];
+const pct = ((val / totalSpent) * 100).toFixed(0);
+if (val > 0) {
+const sliceAngle = (val / totalSpent) * Math.PI * 2;
+ctx.beginPath();
+ctx.moveTo(cx, cy);
+ctx.arc(cx, cy, radius, startAngle, startAngle + sliceAngle);
+ctx.closePath();
+ctx.fillStyle = categoryColors[cat];
+ctx.fill();
+startAngle += sliceAngle;
+}
+const li = document.createElement('li');
+li.className = 'legend-item';
+li.innerHTML = '' + cat + ': ₱' + val.toFixed(0) + ' (' + pct + '%)';
+legend.appendChild(li);
+});
+ctx.beginPath();
+ctx.arc(cx, cy, radius * 0.55, 0, Math.PI * 2);
+ctx.fillStyle = '#f8fafc';
+ctx.fill();
+}
+function updateDashboard() {
+const totalSpent = expenses.reduce(function(sum, item) { return sum + item.amount; }, 0);
+const remaining = allowance - totalSpent;
+const dailyLimit = remaining > 0 ? (remaining / daysLeft) : 0;
+const percent = allowance > 0 ? ((totalSpent / allowance) * 100).toFixed(1) : 0;
+const average = expenses.length > 0 ? (totalSpent / expenses.length) : 0;
+const median = calculateMedian(expenses.map(function(e) { return e.amount; }));
+const highest = expenses.length > 0 ? Math.max.apply(null, expenses.map(function(e) { return e.amount; })) : 0;
+const catTotals = { Food: 0, Transport: 0, School: 0, Other: 0 };
+const catCounts = {};
+let topCategory = 'None';
+let maxCount = 0;
+expenses.forEach(function(e) {
+catTotals[e.category] = (catTotals[e.category] || 0) + e.amount;
+catCounts[e.category] = (catCounts[e.category] || 0) + 1;
+if (catCounts[e.category] > maxCount) {
+maxCount = catCounts[e.category];
+topCategory = e.category;
+}
+});
+document.getElementById('totalAllowance').innerText = '₱' + allowance.toFixed(2);
+document.getElementById('totalSpent').innerText = '₱' + totalSpent.toFixed(2);
+document.getElementById('remainingBalance').innerText = '₱' + remaining.toFixed(2);
+document.getElementById('dailyBudgetText').innerText = 'Safe Daily Limit (' + daysLeft + 'd): ₱' + dailyLimit.toFixed(2) + ' / day';
+document.getElementById('percentUsed').innerText = percent + '%';
+document.getElementById('avgExpense').innerText = '₱' + average.toFixed(2);
+document.getElementById('medianExpense').innerText = '₱' + median.toFixed(2);
+document.getElementById('modeCategory').innerText = topCategory;
+document.getElementById('highestExpense').innerText = '₱' + highest.toFixed(2);
+const bar = document.getElementById('progressBar');
+bar.style.width = Math.min(percent, 100) + '%';
+bar.style.backgroundColor = percent > 100 ? '#ef4444' : '#2563eb';
+const list = document.getElementById('historyList');
+list.innerHTML = '';
+expenses.forEach(function(item) {
+const li = document.createElement('li');
+li.className = 'history-item';
+li.innerHTML = '' + item.category + '' + item.name + '₱' + item.amount.toFixed(2) + 'X';
+list.appendChild(li);
+});
+drawDonutChart(catTotals, totalSpent);
+}
+updateDashboard();
+  </script>
 
 </body>
 </html>
