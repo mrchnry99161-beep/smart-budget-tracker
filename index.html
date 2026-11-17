@@ -4,33 +4,40 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Smart Student Budget Tracker</title>
+  <script src="https://jsdelivr.net"></script>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { background-color: #f0f4f8; color: #1e293b; margin: 0; padding: 20px; display: flex; justify-content: center; }
-    .container { max-width: 480px; width: 100%; background: #ffffff; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); overflow: hidden; }
+    .container { max-width: 500px; width: 100%; background: #ffffff; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); overflow: hidden; }
     .header { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; padding: 24px 20px; text-align: center; }
     .header h1 { margin: 0 0 8px; font-size: 1.4rem; }
     .balance-box { background: rgba(255,255,255,0.15); border-radius: 12px; padding: 14px; margin-top: 12px; }
     .balance-label { font-size: 0.85rem; opacity: 0.9; }
     .balance-amount { font-size: 2rem; font-weight: bold; margin: 4px 0; }
+    .sub-balance { font-size: 0.85rem; opacity: 0.95; margin-top: 4px; }
     .content { padding: 20px; }
-    .section-title { font-size: 0.95rem; font-weight: 700; color: #475569; margin: 16px 0 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .input-group { display: flex; gap: 8px; margin-bottom: 12px; }
+    .section-title { font-size: 0.9rem; font-weight: 700; color: #475569; margin: 18px 0 10px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; }
+    .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
     input, select, button { padding: 10px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; }
     input, select { flex: 1; }
     button { background: #2563eb; color: white; border: none; font-weight: 600; cursor: pointer; transition: background 0.2s; }
     button:hover { background: #1d4ed8; }
     .btn-green { background: #10b981; }
     .btn-green:hover { background: #059669; }
+    .btn-outline { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-size: 0.8rem; padding: 6px 10px; }
+    .btn-outline:hover { background: #e2e8f0; }
+    .btn-danger { background: #fee2e2; color: #dc2626; border: none; font-size: 0.8rem; padding: 6px 10px; }
+    .btn-danger:hover { background: #fecaca; }
     .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
     .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; }
     .stat-title { font-size: 0.78rem; color: #64748b; }
-    .stat-value { font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-top: 4px; }
+    .stat-value { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-top: 4px; }
     .progress-bar-bg { background: #e2e8f0; height: 10px; border-radius: 999px; overflow: hidden; margin: 8px 0; }
     .progress-bar-fill { background: #2563eb; height: 100%; width: 0%; transition: width 0.3s; }
-    .history-list { list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto; }
+    .chart-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-top: 10px; height: 220px; display: flex; justify-content: center; }
+    .history-list { list-style: none; padding: 0; margin: 0; max-height: 220px; overflow-y: auto; }
     .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
-    .badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: #e0e7ff; color: #1d4ed8; margin-right: 6px; }
+    .badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: #e0e7ff; color: #1d4ed8; margin-right: 6px; font-weight: 600; }
     .delete-btn { background: #ef4444; padding: 4px 8px; font-size: 0.75rem; margin-left: 8px; }
     .delete-btn:hover { background: #dc2626; }
   </style>
@@ -43,14 +50,16 @@
     <div class="balance-box">
       <div class="balance-label">Remaining Savings (Allowance - Expenses)</div>
       <div class="balance-amount" id="remainingBalance">₱0.00</div>
+      <div class="sub-balance" id="dailyBudgetText">Safe Daily Limit: ₱0.00 / day</div>
     </div>
   </div>
 
   <div class="content">
-    <div class="section-title">1. Set Daily / Weekly Allowance</div>
+    <div class="section-title">1. Allowance & Days Setup</div>
     <div class="input-group">
-      <input type="number" id="allowanceInput" placeholder="Enter allowance (e.g. 500)" min="0" />
-      <button class="btn-green" onclick="setAllowance()">Set</button>
+      <input type="number" id="allowanceInput" placeholder="Allowance (₱)" min="0" />
+      <input type="number" id="daysInput" placeholder="Days left (e.g. 5)" min="1" />
+      <button class="btn-green" onclick="setAllowance()">Save</button>
     </div>
 
     <div class="section-title">2. Add Expense</div>
@@ -68,7 +77,12 @@
       <button onclick="addExpense()">Add Expense</button>
     </div>
 
-    <div class="section-title">3. Math & Statistics Summary</div>
+    <div class="section-title">3. Expense Breakdown Chart</div>
+    <div class="chart-box">
+      <canvas id="expenseChart"></canvas>
+    </div>
+
+    <div class="section-title">4. Math & Statistics Summary</div>
     <div class="stat-title">Budget Used: <strong id="percentUsed">0%</strong></div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" id="progressBar"></div>
@@ -80,35 +94,59 @@
         <div class="stat-value" id="totalAllowance">₱0.00</div>
       </div>
       <div class="stat-card">
-        <div class="stat-title">Total Spent (Addition)</div>
+        <div class="stat-title">Total Spent (Sum)</div>
         <div class="stat-value" id="totalSpent">₱0.00</div>
       </div>
       <div class="stat-card">
-        <div class="stat-title">Average Expense</div>
+        <div class="stat-title">Mean (Average)</div>
         <div class="stat-value" id="avgExpense">₱0.00</div>
       </div>
       <div class="stat-card">
-        <div class="stat-title">Highest Expense</div>
+        <div class="stat-title">Median Expense</div>
+        <div class="stat-value" id="medianExpense">₱0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Top Category (Mode)</div>
+        <div class="stat-value" id="modeCategory">None</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Highest Single Item</div>
         <div class="stat-value" id="highestExpense">₱0.00</div>
       </div>
     </div>
 
-    <div class="section-title">Expense History</div>
+    <div class="section-title">
+      <span>Expense History</span>
+      <div>
+        <button class="btn-outline" onclick="exportCSV()">Export CSV</button>
+        <button class="btn-danger" onclick="clearAllData()">Reset</button>
+      </div>
+    </div>
     <ul class="history-list" id="historyList"></ul>
   </div>
 </div>
 
 <script>
-  let allowance = 0;
-  let expenses = [];
+  let allowance = parseFloat(localStorage.getItem('sbt_allowance')) || 0;
+  let daysLeft = parseInt(localStorage.getItem('sbt_days')) || 1;
+  let expenses = JSON.parse(localStorage.getItem('sbt_expenses')) || [];
+  let myChart = null;
+
+  function saveToStorage() {
+    localStorage.setItem('sbt_allowance', allowance);
+    localStorage.setItem('sbt_days', daysLeft);
+    localStorage.setItem('sbt_expenses', JSON.stringify(expenses));
+  }
 
   function setAllowance() {
     const val = parseFloat(document.getElementById('allowanceInput').value);
-    if (!isNaN(val) && val >= 0) {
-      allowance = val;
-      document.getElementById('allowanceInput').value = '';
-      updateDashboard();
-    }
+    const days = parseInt(document.getElementById('daysInput').value);
+    if (!isNaN(val) && val >= 0) allowance = val;
+    if (!isNaN(days) && days >= 1) daysLeft = days;
+    document.getElementById('allowanceInput').value = '';
+    document.getElementById('daysInput').value = '';
+    saveToStorage();
+    updateDashboard();
   }
 
   function addExpense() {
@@ -120,56 +158,123 @@
       expenses.push({ id: Date.now(), name, category, amount });
       document.getElementById('expenseName').value = '';
       document.getElementById('expenseAmount').value = '';
+      saveToStorage();
       updateDashboard();
     }
   }
 
   function deleteExpense(id) {
     expenses = expenses.filter(item => item.id !== id);
+    saveToStorage();
     updateDashboard();
   }
 
-  function updateDashboard() {
-    // 1. Addition: Sum of all expenses
-    const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
+  function clearAllData() {
+    if (confirm('Clear all saved allowance and expense records?')) {
+      allowance = 0;
+      daysLeft = 1;
+      expenses = [];
+      saveToStorage();
+      updateDashboard();
+    }
+  }
 
-    // 2. Subtraction: Remaining savings
-    const remaining = allowance - totalSpent;
+  function exportCSV() {
+    if (expenses.length === 0) {
+      alert('Add at least one expense before exporting.');
+      return;
+    }
+    let csv = 'Item Name,Category,Amount (PHP)\n';
+    expenses.forEach(e => {
+      csv += `"${e.name.replace(/"/g, '""')}",${e.category},${e.amount.toFixed(2)}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'smart_budget_report.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
-    // 3. Percentages: Share of allowance spent
-    const percent = allowance > 0 ? ((totalSpent / allowance) * 100).toFixed(1) : 0;
+  function calculateMedian(arr) {
+    if (arr.length === 0) return 0;
+    const sorted = [...arr].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  }
 
-    // 4. Averages: Mean expense per transaction
-    const average = expenses.length > 0 ? (totalSpent / expenses.length) : 0;
+  function updateChart(categoryTotals) {
+    const ctx = document.getElementById('expenseChart').getContext('2d');
+    const labels = Object.keys(categoryTotals);
+    const data = Object.values(categoryTotals);
+    const hasData = data.some(v => v > 0);
 
-    // 5. Statistics: Highest single expense
-    const highest = expenses.length > 0 ? Math.max(...expenses.map(e => e.amount)) : 0;
+    if (myChart) myChart.destroy();
 
-    // Update UI
-    document.getElementById('totalAllowance').innerText = `₱${allowance.toFixed(2)}`;
-    document.getElementById('totalSpent').innerText = `₱${totalSpent.toFixed(2)}`;
-    document.getElementById('remainingBalance').innerText = `₱${remaining.toFixed(2)}`;
-    document.getElementById('percentUsed').innerText = `${percent}%`;
-    document.getElementById('avgExpense').innerText = `₱${average.toFixed(2)}`;
-    document.getElementById('highestExpense').innerText = `₱${highest.toFixed(2)}`;
-
-    const bar = document.getElementById('progressBar');
-    bar.style.width = `${Math.min(percent, 100)}%`;
-    bar.style.backgroundColor = percent > 100 ? '#ef4444' : '#2563eb';
-
-    // Render list
-    const list = document.getElementById('historyList');
-    list.innerHTML = '';
-    expenses.forEach(item => {
-      const li = document.createElement('li');
-      li.className = 'history-item';
-      li.innerHTML = `
-        <div><span class="badge">${item.category}</span>${item.name}</div>
-        <div><strong>₱${item.amount.toFixed(2)}</strong><button class="delete-btn" onclick="deleteExpense(${item.id})">X</button></div>
-      `;
-      list.appendChild(li);
+    myChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: hasData ? labels : ['No Expenses Yet'],
+        datasets: [{
+          data: hasData ? data :,
+          backgroundColor: hasData ? ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6'] : ['#e2e8f0'],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right' }
+        }
+      }
     });
   }
+
+  function updateDashboard() {
+const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
+const remaining = allowance - totalSpent;
+const dailyLimit = remaining > 0 ? (remaining / daysLeft) : 0;
+const percent = allowance > 0 ? ((totalSpent / allowance) * 100).toFixed(1) : 0;
+const average = expenses.length > 0 ? (totalSpent / expenses.length) : 0;
+const median = calculateMedian(expenses.map(e => e.amount));
+const highest = expenses.length > 0 ? Math.max(...expenses.map(e => e.amount)) : 0;
+const catTotals = { Food: 0, Transport: 0, School: 0, Other: 0 };
+const catCounts = {};
+let topCategory = 'None';
+let maxCount = 0;
+expenses.forEach(e => {
+catTotals[e.category] = (catTotals[e.category] || 0) + e.amount;
+catCounts[e.category] = (catCounts[e.category] || 0) + 1;
+if (catCounts[e.category] > maxCount) {
+maxCount = catCounts[e.category];
+topCategory = e.category;
+}
+});
+document.getElementById('totalAllowance').innerText = ₱${allowance.toFixed(2)};
+document.getElementById('totalSpent').innerText = ₱${totalSpent.toFixed(2)};
+document.getElementById('remainingBalance').innerText = ₱${remaining.toFixed(2)};
+document.getElementById('dailyBudgetText').innerText = Safe Daily Limit (${daysLeft}d): ₱${dailyLimit.toFixed(2)} / day;
+document.getElementById('percentUsed').innerText = ${percent}%;
+document.getElementById('avgExpense').innerText = ₱${average.toFixed(2)};
+document.getElementById('medianExpense').innerText = ₱${median.toFixed(2)};
+document.getElementById('modeCategory').innerText = topCategory;
+document.getElementById('highestExpense').innerText = ₱${highest.toFixed(2)};
+const bar = document.getElementById('progressBar');
+bar.style.width = ${Math.min(percent, 100)}%;
+bar.style.backgroundColor = percent > 100 ? '#ef4444' : '#2563eb';
+const list = document.getElementById('historyList');
+list.innerHTML = '';
+expenses.forEach(item => {
+const li = document.createElement('li');
+li.className = 'history-item';
+li.innerHTML = <div><span class="badge">${item.category}</span>${item.name}</div> <div><strong>₱${item.amount.toFixed(2)}</strong><button class="delete-btn" onclick="deleteExpense(${item.id})">X</button></div>;
+list.appendChild(li);
+});
+updateChart(catTotals);
+}
+ updateDashboard();
 </script>
 
 </body>
