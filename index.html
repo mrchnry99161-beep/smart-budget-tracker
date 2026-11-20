@@ -36,7 +36,11 @@
     .chart-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-top: 10px; display: flex; align-items: center; justify-content: space-around; gap: 14px; }
     .legend-list { list-style: none; padding: 0; margin: 0; font-size: 0.88rem; color: #1e293b; }
     .legend-item { margin-bottom: 8px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-    .legend-badge { color: #ffffff; font-weight: 700; padding: 2px 8px; border-radius: 6px; display: inline-block; font-size: 0.85rem; }
+    .legend-badge { color: #ffffff; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: inline-block; font-size: 0.85rem; }
+    .cat-food { background-color: #2563eb; }
+    .cat-transport { background-color: #10b981; }
+    .cat-school { background-color: #f59e0b; }
+    .cat-other { background-color: #8b5cf6; }
     .history-list { list-style: none; padding: 0; margin: 0; max-height: 220px; overflow-y: auto; }
     .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
     .cat-tag { font-weight: 700; color: #1d4ed8; margin-right: 4px; }
@@ -141,6 +145,13 @@
     Other: '#8b5cf6'
   };
 
+  const categoryClasses = {
+    Food: 'cat-food',
+    Transport: 'cat-transport',
+    School: 'cat-school',
+    Other: 'cat-other'
+  };
+
   function saveToStorage() {
     localStorage.setItem('sbt_allowance', allowance);
     localStorage.setItem('sbt_days', daysLeft);
@@ -213,13 +224,13 @@
     return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
   }
 
-  function drawDonutChart(categoryTotals, totalSpent) {
-    const canvas = document.getElementById('expenseChart');
-    const ctx = canvas.getContext('2d');
-    const legend = document.getElementById('chartLegend');
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const outerRadius = 70;
+function drawDonutChart(categoryTotals, totalSpent) {
+const canvas = document.getElementById('expenseChart');
+const ctx = canvas.getContext('2d');
+const legend = document.getElementById('chartLegend');
+const cx = canvas.width / 2;
+const cy = canvas.height / 2;
+const outerRadius = 70;
 const innerRadius = 38;
 ctx.clearRect(0, 0, canvas.width, canvas.height);
 legend.innerHTML = '';
@@ -251,10 +262,9 @@ startAngle += sliceAngle;
 }
 const li = document.createElement('li');
 li.className = 'legend-item';
-li.innerHTML = '' + cat + ':₱' + val.toFixed(0) + ' (' + pct + '%)';
+li.innerHTML = '' + cat + ': ₱' + val.toFixed(0) + ' (' + pct + '%)';
 legend.appendChild(li);
 });
-// Cut out center donut hole
 ctx.beginPath();
 ctx.arc(cx, cy, innerRadius, 0, Math.PI * 2);
 ctx.fillStyle = '#f8fafc';
